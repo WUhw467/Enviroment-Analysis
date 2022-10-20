@@ -1,0 +1,158 @@
+---
+title: "NB"
+author: "Hengxin Wu"
+date: "11/22/2021"
+output: html_document
+---
+
+```{r}
+library(tm)
+#install.packages("tm")
+library(stringr)
+library(wordcloud)
+# ONCE: install.packages("Snowball")
+## NOTE Snowball is not yet available for R v 3.5.x
+## So I cannot use it  - yet...
+##library("Snowball")
+##set working directory
+## ONCE: install.packages("slam")
+library(slam)
+library(quanteda)
+## ONCE: install.packages("quanteda")
+## Note - this includes SnowballC
+library(SnowballC)
+library(arules)
+##ONCE: install.packages('proxy')
+library(proxy)
+library(cluster)
+library(stringi)
+library(proxy)
+library(Matrix)
+library(tidytext) # convert DTM to DF
+library(plyr) ## for adply
+library(ggplot2)
+library(factoextra) # for fviz
+library(mclust) # for Mclust EM clustering
+
+library(naivebayes)
+#Loading required packages
+#install.packages('tidyverse')
+library(tidyverse)
+#install.packages('ggplot2')
+library(ggplot2)
+#install.packages('caret')
+library(caret)
+#install.packages('caretEnsemble')
+library(caretEnsemble)
+#install.packages('psych')
+library(psych)
+#install.packages('Amelia')
+library(Amelia)
+#install.packages('mice')
+library(mice)
+#install.packages('GGally')
+library(GGally)
+library(e1071)
+library(ztable)
+library(naivebayes)
+library(tidyverse)
+library(e1071)
+library(caret)
+library(ztable)
+library(magrittr)
+library(ggplot2)
+library(cvms)
+```
+
+```{r}
+setwd("/Users/hengxinwu/Desktop/DS Homework/501 Portfolio/NB and SVM/R")
+```
+
+```{r}
+data1 <- read.csv("/Users/hengxinwu/Desktop/DS Homework/501 Portfolio/NB and SVM/R/NB.csv")
+str(data1)
+```
+
+```{r}
+data1$Threatened.Species..Vertebrates..number. <- as.numeric(data1$Threatened.Species..Vertebrates..number.)
+data1$Income <- as.factor(data1$Income)
+data1$Development <- as.factor(data1$Development)
+str(data1)
+```
+
+```{r}
+set.seed(1234)
+size <- as.integer(nrow(data1)/4)
+sample1 <- sample(nrow(data1), size, replace = TRUE)
+testdata <- data1[sample1,]
+traindata <- data1[-sample1,]
+nrow(testdata)
+nrow(traindata)
+```
+
+```{r}
+testlabels <- testdata$Development
+trainlabels <- traindata$Development
+```
+
+```{r}
+newtestdata <- testdata[,-which(names(testdata)%in%c("Development"))]
+head(newtestdata)
+```
+
+```{r}
+newtraindata <- traindata[,-which(names(traindata)%in%c("Development"))]
+head(newtraindata)
+```
+
+```{r}
+nrow(newtestdata)
+ncol(newtestdata)
+nrow(newtraindata)
+ncol(newtraindata)
+```
+
+
+```{r}
+Accuracy=c()
+Value_range<-seq(0.01, 10, 0.1)
+for(laplace in Value_range){
+  model<-naiveBayes(Development~.,data=traindata,laplace=laplace)
+  prediction<-predict(model,newtestdata)
+  Accuracy<-c(Accuracy,sum(prediction==testlabels)/nrow(testdata))
+}
+plot(Value_range,Accuracy,'l',xlab='Laplace Value')
+```
+
+```{r}
+NB <- naiveBayes(newtraindata, trainlabels, laplace = 3.91)
+NB_Pred <- predict(NB, newtestdata)
+cm <- table(NB_Pred, testlabels)
+```
+
+```{r}
+confusionMatrix(cm)
+```
+
+```{r}
+heatmap(cm)
+```
+
+```{r}
+NB
+```
+
+# According yo the graph, we can see that all of these variables are significant to the prediction, because when we see the condition probability for each variable, there us a significant difference between developed economies and developing economies by region #
+
+# Accordig to the confusion matrix, out of 6 Developing economies by region, 6 Developing economics by region are successfullu classified as Developing economics by region, and 1 is classified as Developed economies. 6 Developed economies are correctly classified as the Developed economies. The Naive Bayes model shows a very high accuracy whcoih is 0.9167. #
+
+```{r}
+barplot(NB$apriori/sum(NB$apriori),main='Apriori Probabilities')
+```
+
+
+
+
+
+
+

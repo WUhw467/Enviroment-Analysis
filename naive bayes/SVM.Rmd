@@ -1,0 +1,172 @@
+---
+title: "SVM"
+author: "Hengxin Wu"
+date: "11/22/2021"
+output: html_document
+---
+
+# load packages #
+````{r}
+#install.packages("e1071")
+library(e1071)  # for machine learning methods
+#install.packages("mlr")
+library(mlr)
+library(caret)
+library(datasets)
+library(ggplot2)
+library(MASS)  
+```
+
+```{r}
+setwd("/Users/hengxinwu/Desktop/DS Homework/501 Portfolio/NB and SVM/R")
+```
+
+# import data #
+```{r}
+data1 <- read.csv("/Users/hengxinwu/Desktop/DS Homework/501 Portfolio/NB and SVM/R/NB.csv")
+str(data1)
+```
+
+```{r}
+data1$Threatened.Species..Vertebrates..number. <- as.numeric(data1$Threatened.Species..Vertebrates..number.)
+data1$Income <- as.factor(data1$Income)
+data1$Development <- as.factor(data1$Development)
+str(data1)
+```
+
+# plot data #
+```{r}
+plot(data1)
+```
+
+# split to train and test data #
+```{r}
+set.seed(1234)
+size <- as.integer(nrow(data1)/4)
+sample1 <- sample(nrow(data1), size, replace = TRUE)
+testdata <- data1[sample1,]
+traindata <- data1[-sample1,]
+nrow(testdata)
+nrow(traindata)
+```
+
+```{r}
+testlabels <- testdata$Development
+trainlabels <- traindata$Development
+```
+
+```{r}
+newtestdata <- testdata[,-which(names(testdata)%in%c("Development"))]
+head(newtestdata)
+```
+
+# find the best cost #
+```{r}
+set.seed(1)
+obj <- tune(svm, Development~., data = traindata,
+            kernel = 'polynomial',
+            ranges = list(cost=c(0.01:10)))
+summary(obj)
+```
+
+# polynomial kernel #
+```{r}
+model1 <- svm(Development~., data=traindata, 
+               kernel="polynomial", cost = 6.01, 
+               scale=FALSE)
+print(model1)
+```
+
+# prediction #
+```{r}
+pred_P <- predict(model1, newtestdata, type="class")
+```
+
+# confusion matrix #
+```{r}
+table1 <- table(pred_P, testlabels)
+table1
+```
+
+```{r}
+confusionMatrix(table1)
+```
+
+```{r}
+heatmap(table1)
+```
+
+# plot svm #
+```{r}
+plot(model1, traindata, Emissions.per.capita..metric.tons.of.carbon.dioxide.~Emissions..thousand.metric.tons.of.carbon.dioxide.)
+```
+
+
+# find the best cost #
+```{r}
+set.seed(1234)
+obj2 <- tune(svm, Development~., data = traindata,
+            kernel = 'linear',
+            ranges = list(cost=c(0.01:10)))
+summary(obj2)
+```
+
+# linear kernel #
+```{r}
+model2 <- svm(Development~., data=traindata, 
+               kernel="linear", cost = 1.01, 
+               scale=FALSE)
+print(model2)
+```
+
+# prediction #
+```{r}
+pred_P2 <- predict(model2, newtestdata, type="class")
+```
+
+# confusion matrix #
+```{r}
+table2 <- table(pred_P2, testlabels)
+confusionMatrix(table2)
+heatmap(table2)
+```
+# plot svm #
+```{r}
+plot(model2, traindata, Emissions.per.capita..metric.tons.of.carbon.dioxide.~Emissions..thousand.metric.tons.of.carbon.dioxide.)
+```
+
+# find the best cost #
+```{r}
+set.seed(3)
+obj3 <- tune(svm, Development~., data = traindata,
+            kernel = 'radial',
+            ranges = list(cost=c(0.01:10)))
+summary(obj3)
+```
+
+# radial kernel #
+```{r}
+model3 <- svm(Development~., data=traindata, 
+               kernel="radial", cost = 5.01, 
+               scale=FALSE)
+print(model3)
+```
+
+# prediction #
+```{r}
+pred_P3 <- predict(model3, newtestdata, type="class")
+```
+
+# confusion matrix #
+```{r}
+table3 <- table(pred_P3, testlabels)
+confusionMatrix(table3)
+heatmap(table3)
+```
+
+# plot svm #
+```{r}
+plot(model3, traindata, Emissions.per.capita..metric.tons.of.carbon.dioxide.~Emissions..thousand.metric.tons.of.carbon.dioxide.)
+```
+
+
