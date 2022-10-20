@@ -1,0 +1,176 @@
+---
+title: "Decision Tree"
+author: "Hengxin Wu"
+date: "11/10/2021"
+output: html_document
+---
+
+# Import Package
+```{r}
+library(rpart)   ## FOR Decision Trees
+library(rattle)  ## FOR Decision Tree Vis
+library(rpart.plot)
+library(RColorBrewer)
+library(Cairo)
+library(network)
+library(ggplot2)
+##If you install from the source....
+#Sys.setenv(NOAWT=TRUE)
+## ONCE: install.packages("wordcloud")
+library(wordcloud)
+## ONCE: install.packages("tm")
+
+library(slam)
+library(quanteda)
+## ONCE: install.packages("quanteda")
+## Note - this includes SnowballC
+#library(SnowballC)
+
+library(proxy)
+## ONCE: if needed:  install.packages("stringr")
+library(stringr)
+## ONCE: install.packages("textmineR")
+library(textmineR)
+library(igraph)
+library(caret)
+```
+
+# Import data #
+```{r}
+setwd('/Users/hengxinwu/Desktop/DS Homework/501 Portfolio/Decision Trees/R')
+data1 <- read.csv('DT.csv')
+head(data1)
+```
+
+# check the data type #
+```{r}
+str(data1)
+data1$Development <- as.factor(data1$Development)
+data1$Income <- as.factor(data1$Income)
+```
+
+```{r}
+str(data1)
+```
+
+```{r}
+library(ggplot2)
+## Define the function on any dataframe input x
+GoPlot <- function(x) {
+  
+  G <-ggplot(data=data1, aes(.data[[x]], y="") ) +
+  geom_bar(stat="identity", aes(fill =.data[[x]])) 
+  
+  return(G)
+}
+## Use the function in lappy
+lapply(names(data1), function(x) GoPlot(x))
+```
+
+# Split into TRAIN and TEST data #
+```{r}
+(DataSize=nrow(data1)) ## how many rows?
+(TrainingSet_Size<-floor(DataSize*(3/4))) ## Size for training set
+(TestSet_Size <- DataSize - TrainingSet_Size) ## Size for testing set
+```
+
+```{r}
+set.seed(1234)
+## This is the sample of row numbers
+(MyTrainSample <- sample(nrow(data1), TrainingSet_Size,replace=FALSE))
+## Use the sample of row numbers to grab those rows only from
+## the dataframe....
+(MyTrainingSET <- data1[MyTrainSample,])
+table(MyTrainingSET$Development)
+## Use the NOT those row numbers (called -) to get the
+## other row numbers not in the training to use to create
+## the test set.
+## Training and Testing datasets MUST be disjoint. Why?
+(MyTestSET <- data1[-MyTrainSample,])
+table(MyTestSET$Development)
+##Make sure your Training and Testing datasets are BALANCED
+```
+
+# Remove label from the Test datatset #
+```{r}
+(TestKnownLabels <- MyTestSET$Development)
+(MyTestSET <- MyTestSET[ , -which(names(MyTestSET) %in% c("Development"))])
+```
+
+# Create a Decision Tree #
+```{r}
+DT1 <- rpart(MyTrainingSET$Development ~ ., data = MyTrainingSET, method="class")
+```
+
+# VIS #
+```{r}
+fancyRpartPlot(DT1)
+```
+
+# feature importance #
+```{r}
+importance1 <- DT1$variable.importance
+opar <- par(no.readonly = TRUE)
+par(pin = c(3, 3))
+barplot(importance1, horiz = TRUE, las = 1)
+par(opar)
+```
+
+# Make a prediction and create a confusion matrix #
+```{r}
+(DT_Prediction1 = predict(DT1, MyTestSET, type="class"))
+## Confusion Matrix
+table(DT_Prediction1,TestKnownLabels) ## one way to make a confu mat
+heatmap(table(DT_Prediction1,TestKnownLabels))
+```
+
+# Second decision tree #
+```{r}
+DT2 <- rpart(MyTrainingSET$Development ~ ., data = MyTrainingSET, cp=0, method="class", minsplit=3)
+fancyRpartPlot(DT2)
+```
+
+# feature importance #
+```{r}
+importance2 <- DT2$variable.importance
+opar <- par(no.readonly = TRUE)
+par(pin = c(3, 3))
+barplot(importance2, horiz = TRUE, las = 1)
+par(opar)
+```
+
+# Make a prediction and create a confusion matrix #
+```{r}
+(DT_Prediction2 = predict(DT2, MyTestSET, type="class"))
+## Confusion Matrix
+table(DT_Prediction2,TestKnownLabels) ## one way to make a confu mat
+heatmap(table(DT_Prediction2,TestKnownLabels))
+```
+
+# Third decision tree #
+```{r}
+DT3 <- rpart(MyTrainingSET$Development ~ Forest.cover.percentage + Emissions + Income, data = MyTrainingSET, cp=0, method="class", minsplit=3)
+fancyRpartPlot(DT3)
+```
+
+# feature importance #
+```{r}
+importance3 <- DT3$variable.importance
+opar <- par(no.readonly = TRUE)
+par(pin = c(3, 3))
+barplot(importance3, horiz = TRUE, las = 1)
+par(opar)
+```
+
+# Make a prediction and create a confusion matrix #
+```{r}
+(DT_Prediction3 = predict(DT3, MyTestSET, type="class"))
+## Confusion Matrix
+table(DT_Prediction3,TestKnownLabels) ## one way to make a confu mat
+heatmap(table(DT_Prediction3,TestKnownLabels))
+```
+
+
+
+
+
